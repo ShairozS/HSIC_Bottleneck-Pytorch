@@ -13,8 +13,8 @@ def load_data(args, download=False):
     
     if args.dataset == "mnist":
         transform = transforms.Compose([transforms.ToTensor(),])
-        trainset = datasets.MNIST(root='./data', train=True, download=False, transform=transform)
-        testset = datasets.MNIST(root='./data', train=False, download=False, transform=transform)
+        trainset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+        testset = datasets.MNIST(root='./data', train=False, download=True, transform=transform)
         
     if args.dataset == "cifar":
         transform_train = transforms.Compose([

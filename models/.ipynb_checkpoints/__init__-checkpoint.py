@@ -1,6 +1,7 @@
 from .vgg import *
 from .simple import *
 from .signMLP import *
+from .chebykan import *
 # from .dpn import *
 # from .lenet import *
 # from .senet import *
