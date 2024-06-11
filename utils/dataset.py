@@ -9,14 +9,14 @@ from torchvision import datasets, transforms
 #!wget www.di.ens.fr/~lelarge/MNIST.tar.gz
 #!tar -zxvf MNIST.tar.gz
 
-def load_data(args, download=False):
+def load_data(dataset = 'mnist', batchsize = 128, download=False):
     
-    if args.dataset == "mnist":
+    if dataset == "mnist":
         transform = transforms.Compose([transforms.ToTensor(),])
         trainset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
         testset = datasets.MNIST(root='./data', train=False, download=True, transform=transform)
         
-    if args.dataset == "cifar":
+    if dataset == "cifar":
         transform_train = transforms.Compose([
 #             transforms.RandomCrop(32, padding=4),
 #             transforms.RandomHorizontalFlip(),
@@ -30,8 +30,9 @@ def load_data(args, download=False):
         trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
         testset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
         
-    train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batchsize, shuffle=True, 
-                                               drop_last=True, num_workers=4, pin_memory=False)
-    test_loader = torch.utils.data.DataLoader(testset, batch_size=args.batchsize, shuffle=False, 
-                                              drop_last=True, num_workers=4, pin_memory=False)
+    train_loader = torch.utils.data.DataLoader(trainset, batch_size=batchsize, shuffle=True, 
+                                               drop_last=True, num_workers=0, pin_memory=False)
+    
+    test_loader = torch.utils.data.DataLoader(testset, batch_size=batchsize, shuffle=False, 
+                                              drop_last=True, num_workers=0, pin_memory=False)
     return train_loader, test_loader

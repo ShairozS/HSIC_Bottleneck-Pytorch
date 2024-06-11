@@ -240,7 +240,7 @@ class KANLinear(torch.nn.Module):
 
 
 class KAN(nn.Module):
-    def __init__(self, degree = 4, layer_sizes = [784, 256, 128, 128], output_size = 10, activation = nn.ReLU(), dropout = 0.2):
+    def __init__(self, degree = 3, layer_sizes = [784, 256, 128, 128], output_size = 10, activation = nn.ReLU(), dropout = 0.2, init = torch.nn.init.kaiming_uniform_):
         super(KAN, self).__init__()
 
         #self.units = [3072, 256, 256, 256, 256, 256]

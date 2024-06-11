@@ -15,13 +15,13 @@ class PreNormResidual(nn.Module):
     def forward(self, x):
         return self.fn(self.norm(x)) + x
 
-def FeedForward(dim, expansion_factor = 4, dropout = 0., dense = nn.Linear):
+def FeedForward(dim, expansion_factor = 4, dropout = 0.):
     inner_dim = int(dim * expansion_factor)
     return nn.Sequential(
-        dense(dim, inner_dim),
+        nn.Linear(dim, inner_dim),
         nn.GELU(),
         nn.Dropout(dropout),
-        dense(inner_dim, dim),
+        nn.Linear(inner_dim, dim),
         nn.Dropout(dropout)
     )
 
@@ -44,15 +44,15 @@ def MLPMixer(*, image_size, channels, patch_size, dim, depth, num_classes, expan
     )
 
 
-class MLPMixer(nn.Module):
+class MLPMixerNet(nn.Module):
     def __init__(self, layer_sizes = [784, 256, 128, 128], output_size = 10, activation = nn.ReLU(), dropout = 0.2):
-        super(ChebyKAN, self).__init__()
+        super(MLPMixerNet, self).__init__()
 
         #self.units = [3072, 256, 256, 256, 256, 256]
         self.units = layer_sizes
         self.output_layer  = nn.Linear(self.units[-1], output_size)
 
-        self.module_list = nn.ModuleList( [ChebyKANLayer(self.units[i], self.units[i+1], degree = degree) for i in range(len(self.units)-1)])
+        self.module_list = nn.ModuleList( [MLPMixer(self.units[i], self.units[i+1], degree = degree) for i in range(len(self.units)-1)])
         self.f3 = nn.Dropout(p=dropout)
         self.act2 = activation
         
