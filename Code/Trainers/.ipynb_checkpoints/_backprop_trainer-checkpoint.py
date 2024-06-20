@@ -23,9 +23,13 @@ class Backprop:
         if self.loss == "mse": self.output_criterion = nn.MSELoss()#y_pred, labels_float)
         elif self.loss == "CE": self.output_criterion = nn.CrossEntropyLoss()#y_pred, label)
         
-    def step(self, input_data, labels):
+    def step(self, input_data, labels, **kwargs):
         self.opt.zero_grad()
-
+        if 'LBFGS' in type(self.opt).__name__:
+            c = kwargs['closure']
+            self.opt.step(c)
+            return(c())
+        
         labels_float = F.one_hot(labels, num_classes=self.num_classes).float()
         y_pred, hidden_zs = self.model(input_data)
 
@@ -33,7 +37,7 @@ class Backprop:
             l = self.output_criterion(y_pred, labels_float)
         elif self.loss == "CE": 
             l = self.output_criterion(y_pred, labels)
-
+        
         l.backward()
         self.opt.step()
         return(l)

@@ -5,10 +5,12 @@ from torch import nn
 #https://github.com/Blealtan/efficient-kan/blob/master/src/efficient_kan/kan.py
 
 class KANLinear(torch.nn.Module):
+    
     def __init__(
         self,
         in_features,
         out_features,
+        batchnorm = 0,
         grid_size=5,
         degree=3,
         scale_noise=0.1,
@@ -18,10 +20,13 @@ class KANLinear(torch.nn.Module):
         base_activation=torch.nn.SiLU,
         grid_eps=0.02,
         grid_range=[-1, 1],
+        init = torch.nn.init.kaiming_uniform_
     ):
         super(KANLinear, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
+        self.batchnorm = batchnorm
+        self.bn = nn.BatchNorm1d(out_features)
         self.grid_size = grid_size
         self.spline_order = degree
 
@@ -51,11 +56,14 @@ class KANLinear(torch.nn.Module):
         self.enable_standalone_scale_spline = enable_standalone_scale_spline
         self.base_activation = base_activation()
         self.grid_eps = grid_eps
-
+        self.init = init
         self.reset_parameters()
 
     def reset_parameters(self):
-        torch.nn.init.kaiming_uniform_(self.base_weight, a=math.sqrt(5) * self.scale_base)
+        try:
+            self.init(self.base_weight, a=math.sqrt(5) * self.scale_base)
+        except TypeError:
+            self.init(self.base_weight) # For inits that don't require a mean parameter
         with torch.no_grad():
             noise = (
                 (
@@ -74,7 +82,11 @@ class KANLinear(torch.nn.Module):
             )
             if self.enable_standalone_scale_spline:
                 # torch.nn.init.constant_(self.spline_scaler, self.scale_spline)
-                torch.nn.init.kaiming_uniform_(self.spline_scaler, a=math.sqrt(5) * self.scale_spline)
+                try:
+                    self.init(self.spline_scaler, a=math.sqrt(5) * self.scale_spline)
+                except TypeError:
+                    self.init(self.spline_scaler) # For inits that don't require a mean parameter
+    
 
     def b_splines(self, x: torch.Tensor):
         """
@@ -164,6 +176,7 @@ class KANLinear(torch.nn.Module):
         output = base_output + spline_output
         
         output = output.view(*original_shape[:-1], self.out_features)
+        output = self.bn(output) if self.batchnorm else output
         return output
 
     @torch.no_grad()
@@ -240,15 +253,15 @@ class KANLinear(torch.nn.Module):
 
 
 class KAN(nn.Module):
-    def __init__(self, degree = 3, layer_sizes = [784, 256, 128, 128], output_size = 10, activation = nn.ReLU(), dropout = 0.2, init = torch.nn.init.kaiming_uniform_):
+    def __init__(self, degree = 3, layer_sizes = [784, 256, 128, 128], output_size = 10, activation = nn.ReLU(), dropout = 0.2, init = torch.nn.init.kaiming_uniform_, batchnorm = 0):
         super(KAN, self).__init__()
 
         #self.units = [3072, 256, 256, 256, 256, 256]
         self.units = layer_sizes
         #self.output_layer  = nn.Linear(self.units[-1], output_size)
-        self.output_layer = KANLinear(self.units[-1], output_size, degree = degree)
+        self.output_layer = KANLinear(self.units[-1], output_size, degree = degree, init = init)
 
-        self.module_list = nn.ModuleList( [KANLinear(self.units[i], self.units[i+1], degree = degree) for i in range(len(self.units)-1)])
+        self.module_list = nn.ModuleList( [KANLinear(self.units[i], self.units[i+1], degree = degree, batchnorm = batchnorm) for i in range(len(self.units)-1)])
         self.f3 = nn.Dropout(p=dropout)
         self.act2 = activation
         

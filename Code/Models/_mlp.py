@@ -5,29 +5,30 @@ from torchvision import datasets, transforms
 ### MODEL ###
 class MLPBlock(nn.Module):
     
-    def __init__(self, inplane, outplane, affine=False, activation = nn.ReLU()):
+    def __init__(self, inplane, outplane, batchnorm=False, activation = nn.ReLU()):
         super(MLPBlock, self).__init__()
         self.linear = nn.Linear(inplane, outplane)
-        self.bn = nn.BatchNorm1d(outplane, affine=affine)
+        self.batchnorm = batchnorm
+        self.bn = nn.BatchNorm1d(outplane)
         self.act = activation#nn.GELU()
         
     def forward(self, x):
         x = self.linear(x)
         x = self.act(x)
-        x = self.bn(x)
+        x = self.bn(x) if self.batchnorm else x
         return x
         
 class MLP(nn.Module):
     
-    def __init__(self, bn_affine = 1, layer_sizes = [784, 256, 128, 128], output_size = 10, activation = nn.ReLU(), dropout = 0.2, init = torch.nn.init.kaiming_uniform_):
+    def __init__(self, batchnorm = 1, layer_sizes = [784, 256, 128, 128], output_size = 10, activation = nn.ReLU(), dropout = 0.2, init = torch.nn.init.kaiming_uniform_):
         super(MLP, self).__init__()
         
-        self.bn_affine = bn_affine 
+        self.batchnorm = batchnorm 
         self.units = layer_sizes
         self.output_layer  = nn.Linear(self.units[-1], output_size)        
 
 
-        self.module_list = nn.ModuleList( [MLPBlock(self.units[i], self.units[i+1], affine=self.bn_affine, activation = activation) for i in range(len(self.units)-1)])
+        self.module_list = nn.ModuleList( [MLPBlock(self.units[i], self.units[i+1], batchnorm=self.batchnorm, activation = activation) for i in range(len(self.units)-1)])
         [self.weights_init(m.linear, init) for m in self.module_list]
         
         self.f3 = nn.Dropout(p=dropout)

@@ -16,17 +16,19 @@ def get_filename(args):
             filename += "_Latinb{}".format(args.Latinb_lambda)
     return filename
 
-def show_result(hsic, train_loader, test_loader, epoch, logs, device):
-    hsic.model.eval()
+def show_result(model, train_loader, test_loader, epoch, logs, device):
+    model.model.eval()
     with torch.no_grad():
         counts, correct, counts2, correct2 = 0, 0, 0, 0        
         for batch_idx, (data, target) in enumerate(train_loader): 
-            output = hsic.model.forward(data.view(data.size(0), -1).to(device))[0].cpu()
+            #if len(data.shape) > 3: # Channel dimension exists
+            #    data = torch.mean(data, axis = 1).squeeze()
+            output = model.model.forward(data.view(data.size(0), -1).to(device))[0].cpu()
             pred = output.argmax(dim=1, keepdim=True)
             correct += (pred[:,0] == target).float().sum()
             counts += len(pred)
         for batch_idx, (data, target) in enumerate(test_loader): 
-            output = hsic.model.forward(data.view(data.size(0), -1).to(device))[0].cpu()
+            output = model.model.forward(data.view(data.size(0), -1).to(device))[0].cpu()
             pred = output.argmax(dim=1, keepdim=True)
             correct2 += (pred[:,0] == target).float().sum()
             counts2 += len(pred)
