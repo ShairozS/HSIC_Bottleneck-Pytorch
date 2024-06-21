@@ -253,7 +253,8 @@ class KANLinear(torch.nn.Module):
 
 
 class KAN(nn.Module):
-    def __init__(self, degree = 3, layer_sizes = [784, 256, 128, 128], output_size = 10, activation = nn.ReLU(), dropout = 0.2, init = torch.nn.init.kaiming_uniform_, batchnorm = 0):
+    def __init__(self, degree = 3, layer_sizes = [784, 256, 128, 128], output_size = 10, 
+                 activation = nn.ReLU, dropout = 0.2, init = torch.nn.init.kaiming_uniform_, batchnorm = 0):
         super(KAN, self).__init__()
 
         #self.units = [3072, 256, 256, 256, 256, 256]
@@ -261,9 +262,9 @@ class KAN(nn.Module):
         #self.output_layer  = nn.Linear(self.units[-1], output_size)
         self.output_layer = KANLinear(self.units[-1], output_size, degree = degree, init = init)
 
-        self.module_list = nn.ModuleList( [KANLinear(self.units[i], self.units[i+1], degree = degree, batchnorm = batchnorm) for i in range(len(self.units)-1)])
+        self.module_list = nn.ModuleList( [KANLinear(self.units[i], self.units[i+1], degree = degree, batchnorm = batchnorm, base_activation = activation) for i in range(len(self.units)-1)])
         self.f3 = nn.Dropout(p=dropout)
-        self.act2 = activation
+        self.act2 = activation()
         
     def forward(self, data):
         x = data

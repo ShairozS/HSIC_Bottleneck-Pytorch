@@ -25,7 +25,7 @@ if __name__ == '__main__':
         
         for init in [torch.nn.init.orthogonal_, torch.nn.init.kaiming_normal_, torch.nn.init.kaiming_uniform_]:
             
-            for layer_sizes in [[784, 128, 64, 32]]:
+            for layer_sizes in [[784, 32], [784, 64, 32], [784, 128, 64, 32]]:
                 if wide:
                     layer_sizes = [10*x if x!=784 else x for x in layer_sizes]
                     print(layer_sizes)
