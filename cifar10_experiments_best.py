@@ -39,7 +39,7 @@ if __name__ == '__main__':
                 if wide:
                     layer_sizes = [10*x if x!=32*32*3 else x for x in layer_sizes]
                 if model_name == 'mlp':
-                    model = MLP(layer_sizes = layer_sizes, output_size = 10, dropout = dropout, init = init, batchnorm = batchnorm, activation = act)
+                    model = MLP(layer_sizes = layer_sizes, output_size = 10, dropout = dropout, init = init, batchnorm = batchnorm, activation = act())
                 elif model_name == 'kan':
                     model = KAN(layer_sizes = layer_sizes, output_size = 10, dropout = dropout, init = init, batchnorm = batchnorm, activation = act)
                 

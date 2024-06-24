@@ -12,20 +12,20 @@ if __name__ == '__main__':
     from torch import nn
     
     batchsize = 4096
-    train_loader, test_loader = load_data(dataset = 'fashion_mnist', batchsize=batchsize)
+    train_loader, test_loader = load_data(dataset = 'mnist', batchsize=batchsize)
     epochs = 100
     loss = "CE" #"mse"
     device = "cuda"
     dropout = 0.2
     degree = 3
-    trainer_ = Backprop
-    wide = 1
+    trainer_ = HSICBottleneck
+    wide = 0
     
-    for model_name in ['mlp']:
+    for model_name in ['mlp', 'kan']:
         
         for init in [torch.nn.init.orthogonal_, torch.nn.init.kaiming_normal_, torch.nn.init.kaiming_uniform_]:
             
-            for layer_sizes in  [[784, 32], [784, 64, 32], [784, 128, 64, 32]]:
+            for layer_sizes in [[784, 32], [784, 64, 32], [784, 128, 64, 32]]:
                 if wide:
                     layer_sizes = [10*x if x!=784 else x for x in layer_sizes]
                     print(layer_sizes)
@@ -46,7 +46,7 @@ if __name__ == '__main__':
                         if wide:
                             model_name = "mlpWide"
                             
-                        experiment_name = "Fashion_backprop_" + model_name + "_" + str(len(layer_sizes)) + "layers"
+                        experiment_name = "MNIST_HSIC_" + model_name + "_" + str(len(layer_sizes)) + "layers"
                         
                         if 'cuda' in device:
                             assert next(model.parameters()).is_cuda
@@ -90,6 +90,7 @@ if __name__ == '__main__':
                                     trainer.tune_output(data.view(batchsize, -1).to(device), target.to(device))
                                 except AttributeError:
                                     pass
+                                    
                             end = time.time()
                             if epoch % 2 == 0:
                                 show_result(trainer, train_loader, test_loader, epoch, logs, device)
