@@ -12,7 +12,6 @@ if __name__ == '__main__':
     from torch import nn
     
     batchsize = 2048
-    train_loader, test_loader = load_data(dataset = 'cifar', batchsize=batchsize)
     epochs = 100
     loss = "CE" #"mse"
     device = "cuda"
@@ -23,38 +22,42 @@ if __name__ == '__main__':
     wide = 0
     init = torch.nn.init.orthogonal_
     lr = 0.0005
-    layer_sizes = [32*32*3, 1024, 512, 256]
+    
     # Entropy is the number of states
     # Entropy increases when information is lost
     # With time, entropy decreases
     # Increasing entropy requires information
     # Information requires energy
     
-    for model_name in ['kan', 'mlp']:
-
-        wide = 0 if 'mlp' not in model_name else wide
+    for dataset in ['mnist', 'cifar', 'fashion_mnist']:
         
-        for act in [nn.SiLU, nn.GELU, nn.ELU]:
-            
-                if wide:
-                    layer_sizes = [10*x if x!=32*32*3 else x for x in layer_sizes]
-                if model_name == 'mlp':
-                    model = MLP(layer_sizes = layer_sizes, output_size = 10, dropout = dropout, init = init, batchnorm = batchnorm, activation = act())
-                elif model_name == 'kan':
-                    model = KAN(layer_sizes = layer_sizes, output_size = 10, dropout = dropout, init = init, batchnorm = batchnorm, activation = act)
+        train_loader, test_loader = load_data(dataset = dataset, batchsize=batchsize)
+
+        act = nn.SiLU
+        model_name = 'kan'
+        
+        for degree in [2,3,4,5]:
+        #for act in [nn.SiLU, nn.GELU, nn.ELU]:
+        
+                if dataset in ['mnist', 'fashion_mnist']:
+                    layer_sizes = [784, 128, 64, 32]
+                else:
+                    layer_sizes = [32*32*3, 1024, 512, 256]
+
+
+                print("Dataset: ", dataset)
+                print("Layer sizes: ", layer_sizes)
+                print("Degree: ", degree)
+                model = KAN(layer_sizes = layer_sizes, output_size = 10, dropout = dropout, init = init, batchnorm = batchnorm, activation = act, degree = degree)
                 
                 model = model.to(device)
                 optimizer = optim.AdamW(model.parameters(), lr=lr) 
 
-                print("Layer sizes: ", layer_sizes)
                 num_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad); print("Model trainable parameters: ", num_parameters)
                 print("--------------------------------------------------------------------")
+       
                 
-                
-                if wide:
-                    model_name = "mlpWide"
-                
-                experiment_name = "CIFAR_backprop_" + model_name + "_" + str(len(layer_sizes)) + "layers" + "_activation_" + act.__name__
+                experiment_name = dataset.upper() + "_backprop_" + model_name + "_" + str(len(layer_sizes)) + "layers" + "_activation_" + act.__name__ + "_degree_" + str(degree)
                 
                 if 'cuda' in device:
                     assert next(model.parameters()).is_cuda
