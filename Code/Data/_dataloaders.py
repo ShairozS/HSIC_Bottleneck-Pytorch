@@ -9,7 +9,7 @@ from torchvision import datasets, transforms
 #!wget www.di.ens.fr/~lelarge/MNIST.tar.gz
 #!tar -zxvf MNIST.tar.gz
 
-def load_data(dataset, batchsize = 128, download=False):
+def load_data(dataset, batchsize = 128, download=False, train_path = None, test_path = None):
     
     if dataset == "mnist":
         transform = transforms.Compose([transforms.ToTensor(),])
@@ -21,7 +21,28 @@ def load_data(dataset, batchsize = 128, download=False):
         trainset = datasets.FashionMNIST(root='./data', train=True, download=True, transform=transform)
         testset = datasets.FashionMNIST(root='./data', train=False, download=True, transform=transform)
 
-    
+    if dataset == "higgs":
+        dat = pd.read_csv(train_path)
+        dat.loc[dat.Label == 's', 'Label']=1
+        dat.loc[dat.Label == 'b', 'Label']=0
+        class Higgs(Dataset):
+            def __init__(self, dataframe):
+                self.dataframe = dataframe
+            def __len__(self):
+                return(self.dataframe.shape[0])
+            def __getitem__(self, i):
+                row = self.dataframe.iloc[i,:]
+                inp = row[[x for x in self.dataframe.columns if x not in ['EventId', 'Label']]]
+                out = row[['Label']]
+                return(np.array(inp).astype('float32'), np.array(out[0]).astype('uint8'))
+
+        trainset = Higgs(dat)
+        dat = pd.read_csv(test_path)
+        dat.loc[dat.Label == 's', 'Label']=1
+        dat.loc[dat.Label == 'b', 'Label']=0
+        testset = Higgs(dat)
+
+        
     if dataset == "cifar":
         transform_train = transforms.Compose([
 #             transforms.RandomCrop(32, padding=4),
@@ -39,7 +60,8 @@ def load_data(dataset, batchsize = 128, download=False):
         
         trainset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
         testset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
-        
+
+    
     train_loader = torch.utils.data.DataLoader(trainset, batch_size=batchsize, shuffle=True, 
                                                drop_last=True, num_workers=4, pin_memory=False)
     test_loader = torch.utils.data.DataLoader(testset, batch_size=batchsize, shuffle=False, 
