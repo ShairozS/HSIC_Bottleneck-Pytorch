@@ -11,7 +11,7 @@ if __name__ == '__main__':
     import pandas as pd
     from torch import nn
     
-    batchsize = 2048
+    batchsize = 1024
     train_loader, test_loader = load_data(dataset = 'cifar', batchsize=batchsize)
     epochs = 100
     loss = "CE" #"mse"
@@ -35,8 +35,9 @@ if __name__ == '__main__':
 
         
         for init in [torch.nn.init.orthogonal_, torch.nn.init.kaiming_normal_, torch.nn.init.kaiming_uniform_]:
-            
-            for layer_sizes in [[32*32*3, 256], [32*32*3, 512, 256], [32*32*3, 1024, 512, 256]]:
+
+            for layer_sizes in [[32*32*3, 512, 256], [32*32*3, 1024, 512, 256]]:
+            #for layer_sizes in [[32*32*3, 256], [32*32*3, 512, 256], [32*32*3, 1024, 512, 256]]:
                 if wide:
                     layer_sizes = [10*x if x!=32*32*3 else x for x in layer_sizes]
                 if model_name == 'mlp':
