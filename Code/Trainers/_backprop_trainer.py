@@ -30,7 +30,7 @@ class Backprop:
             self.opt.step(c)
             return(c())
         
-        labels_float = F.one_hot(labels, num_classes=self.num_classes).float()
+        labels_float = F.one_hot(labels.long(), num_classes=self.num_classes).float()
         y_pred, hidden_zs = self.model(input_data)
 
         if self.loss == "mse": 

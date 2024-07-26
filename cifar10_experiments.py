@@ -21,7 +21,7 @@ if __name__ == '__main__':
     trainer_ = Backprop
     batchnorm = 1
     wide = 1
-    activation = nn.GeLU()
+    activation = nn.GELU()
 
     # Entropy is the number of states
     # Entropy increases when information is lost
@@ -29,14 +29,15 @@ if __name__ == '__main__':
     # Increasing entropy requires information
     # Information requires energy
     
-    for model_name in ['mlp', 'kan']:
+    for model_name in ['mlp']:
 
         wide = 0 if 'mlp' not in model_name else wide
 
         
         for init in [torch.nn.init.orthogonal_, torch.nn.init.kaiming_normal_, torch.nn.init.kaiming_uniform_]:
-            
-            for layer_sizes in [[32*32*3, 256], [32*32*3, 512, 256], [32*32*3, 1024, 512, 256]]:
+
+            for layer_sizes in [[32*32*3, 1024, 512, 256]]:
+            #for layer_sizes in [[32*32*3, 256], [32*32*3, 512, 256], [32*32*3, 1024, 512, 256]]:
                 if wide:
                     layer_sizes = [10*x if x!=32*32*3 else x for x in layer_sizes]
                 if model_name == 'mlp':
@@ -49,15 +50,17 @@ if __name__ == '__main__':
                 print("Layer sizes: ", layer_sizes)
                 num_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad); print("Model trainable parameters: ", num_parameters)
                 print("--------------------------------------------------------------------")
-                
-                for lr in [0.005, 0.0005]:
+
+                for lr in [0.0005]:
+                #for lr in [0.005, 0.0005]:
         
                     for o in ["SGDM", "Adam", "SGD"]:
 
                         if wide:
                             model_name = "mlpWide"
-                        
-                        experiment_name = "CIFAR_backprop_" + model_name + "_" + str(len(layer_sizes)) + "layers"
+
+                        bp = 'backprop'# if type(trainer_)==Backprop else 'hsic'
+                        experiment_name = "CIFAR_" + bp + "_" + model_name + "_" + str(len(layer_sizes)) + "layers"
                         
                         if 'cuda' in device:
                             assert next(model.parameters()).is_cuda

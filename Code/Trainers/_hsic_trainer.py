@@ -59,7 +59,7 @@ class HSICBottleneck:
         
     def step(self, input_data, labels):
         
-        labels_float = F.one_hot(labels, num_classes=self.num_classes).float()
+        labels_float = F.one_hot(labels.long(), num_classes=self.num_classes).float()
         if self.forward == "x": Kx  = self.kernel(input_data, self.sigma, self.kernel_x)
         Ky = self.kernel(labels_float, self.sigma, self.kernel_y)
         
