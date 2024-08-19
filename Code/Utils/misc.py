@@ -2,6 +2,7 @@ import torch
 from torch import nn
 from torchvision import datasets, transforms
 from tqdm import tqdm
+import pdb
 
 def get_filename(args):
     if args.BP == 1:
@@ -21,16 +22,27 @@ def show_result(model, train_loader, test_loader, epoch, logs, device):
     model.model.eval()
     with torch.no_grad():
         counts, correct, counts2, correct2 = 0, 0, 0, 0        
+        
         for batch_idx, (data, target) in enumerate(train_loader): 
             #if len(data.shape) > 3: # Channel dimension exists
             #    data = torch.mean(data, axis = 1).squeeze()
+            target = target.squeeze()
             output = model.model.forward(data.view(data.size(0), -1).to(device))[0].cpu()
-            pred = output.argmax(dim=1, keepdim=True)
-            correct += (pred[:,0] == target).float().sum()
+            pred = output.argmax(dim=1, keepdim=True).cpu()
+            cor = (pred[:,0] == target).float().sum()
+            if cor > len(pred):
+                print("Warning, for batch ", batch_idx)
+                print("Correct value exceeds count, skipping...")
+                pdb.set_trace()
+                continue
+            correct += cor
             counts += len(pred)
+            
+        
         for batch_idx, (data, target) in enumerate(test_loader): 
+            target = target.squeeze()
             output = model.model.forward(data.view(data.size(0), -1).to(device))[0].cpu()
-            pred = output.argmax(dim=1, keepdim=True)
+            pred = output.argmax(dim=1, keepdim=True).cpu()
             correct2 += (pred[:,0] == target).float().sum()
             counts2 += len(pred)
             
