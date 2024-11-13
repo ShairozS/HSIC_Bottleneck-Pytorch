@@ -19,9 +19,9 @@ if __name__ == '__main__':
     dropout = 0.2
     degree = 3
     trainer_ = Backprop
-    wide = 1
+    wide = 0
     
-    for model_name in ['mlp']:
+    for model_name in ['kan']:
         
         for init in [torch.nn.init.orthogonal_, torch.nn.init.kaiming_normal_, torch.nn.init.kaiming_uniform_]:
             

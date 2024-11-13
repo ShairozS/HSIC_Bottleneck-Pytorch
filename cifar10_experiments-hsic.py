@@ -11,7 +11,7 @@ if __name__ == '__main__':
     import pandas as pd
     from torch import nn
     
-    batchsize = 1024
+    batchsize = 512
     train_loader, test_loader = load_data(dataset = 'cifar', batchsize=batchsize)
     epochs = 100
     loss = "CE" #"mse"
@@ -20,7 +20,7 @@ if __name__ == '__main__':
     degree = 3
     trainer_ = HSICBottleneck
     batchnorm = 1
-    wide = 0
+    wide = 1
     activation = nn.GELU()
 
     # Entropy is the number of states
@@ -29,17 +29,19 @@ if __name__ == '__main__':
     # Increasing entropy requires information
     # Information requires energy
     
-    for model_name in ['kan', 'mlp']:
+    for model_name in ['mlp', 'kan']:
 
-        wide = 0 if 'mlp' not in model_name else wide
+        #wide = 0 if 'mlp' not in model_name else wide
 
         
-        for init in [torch.nn.init.orthogonal_, torch.nn.init.kaiming_normal_, torch.nn.init.kaiming_uniform_]:
+        for init in [torch.nn.init.kaiming_uniform_]:
 
             for layer_sizes in [[32*32*3, 512, 256], [32*32*3, 1024, 512, 256]]:
             #for layer_sizes in [[32*32*3, 256], [32*32*3, 512, 256], [32*32*3, 1024, 512, 256]]:
-                if wide:
+                if wide and model_name == 'mlp':
                     layer_sizes = [10*x if x!=32*32*3 else x for x in layer_sizes]
+                elif wide and model_name == 'kan':
+                    continue
                 if model_name == 'mlp':
                     model = MLP(layer_sizes = layer_sizes, output_size = 10, dropout = dropout, init = init, batchnorm = batchnorm)
                 elif model_name == 'kan':
@@ -51,9 +53,9 @@ if __name__ == '__main__':
                 num_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad); print("Model trainable parameters: ", num_parameters)
                 print("--------------------------------------------------------------------")
                 
-                for lr in [0.005, 0.0005]:
+                for lr in [0.0005]:
         
-                    for o in ["SGDM", "Adam", "SGD"]:
+                    for o in ["Adam", "SGD"]:
 
                         if wide:
                             model_name = "mlpWide"

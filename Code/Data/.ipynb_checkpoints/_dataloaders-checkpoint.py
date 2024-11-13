@@ -23,6 +23,30 @@ def load_data(dataset, batchsize = 128, download=False, train_path = None, test_
         trainset = datasets.FashionMNIST(root='./data', train=True, download=True, transform=transform)
         testset = datasets.FashionMNIST(root='./data', train=False, download=True, transform=transform)
 
+    if dataset == 'imdb':
+        class IMDB(Dataset):
+        
+            def __init__(self, mode = 'train'):
+                if mode == 'train':
+                    self.data = np.load('./data/IMDB Dataset_clean_train.npy')
+                    print("For mode = " + mode + " dataset shape: ", self.data.shape)
+                elif mode == 'test':
+                    self.data = np.load('./data/IMDB Dataset_clean_test.npy')
+                    print("For mode = " + mode + " dataset shape: ", self.data.shape)
+        
+            def __len__(self):
+                return(self.data.shape[0])
+        
+            def __getitem__(self, idx):
+                d_x = self.data[idx, :100]
+                d_y = self.data[idx, -1]
+                d_x = torch.Tensor(d_x)
+                d_y = torch.Tensor([d_y])
+                return(d_x[np.newaxis,:], d_y)
+
+        trainset = IMDB(mode = 'train')
+        testset = IMDB(mode = 'test')
+        
     if dataset == "higgs":
         
         # Download from: https://archive.ics.uci.edu/dataset/280/higgs

@@ -12,7 +12,7 @@ if __name__ == '__main__':
     from torch import nn
     
     batchsize = 2048
-    epochs = 100
+    epochs = 4
     loss = "CE" #"mse"
     device = "cuda"
     dropout = 0.2
@@ -29,26 +29,38 @@ if __name__ == '__main__':
     # Increasing entropy requires information
     # Information requires energy
     
-    for dataset in ['mnist', 'cifar', 'fashion_mnist']:
-        
-        train_loader, test_loader = load_data(dataset = dataset, batchsize=batchsize)
+    for dataset in ['higgs']:
 
+        if dataset=='higgs':
+            train_loader, test_loader = load_data(dataset = 'higgs', batchsize=batchsize, 
+                                          test_path = r'./data/higgs/HIGGS.csv', train_path = r'./data/higgs/HIGGS.csv')
+        else:
+            train_loader, test_loader = load_data(dataset = dataset, batchsize=batchsize)
+        
         act = nn.SiLU
         model_name = 'kan'
         
-        for degree in [2,3,4,5]:
-        #for act in [nn.SiLU, nn.GELU, nn.ELU]:
+        #for degree in [2,3,4,5]:
+        for act in [nn.SiLU, nn.GELU, nn.ELU]:
         
                 if dataset in ['mnist', 'fashion_mnist']:
                     layer_sizes = [784, 128, 64, 32]
+                    num_classes = 10
+                elif dataset in ['imdb']:
+                    layer_sizes = [100, 128, 64, 32]
+                    num_classes = 2
+                elif dataset in ['higgs']:
+                    layer_sizes = [28, 1024, 512, 256]
+                    num_classes = 2
                 else:
                     layer_sizes = [32*32*3, 1024, 512, 256]
+                    num_classes = 10
 
 
                 print("Dataset: ", dataset)
                 print("Layer sizes: ", layer_sizes)
                 print("Degree: ", degree)
-                model = KAN(layer_sizes = layer_sizes, output_size = 10, dropout = dropout, init = init, batchnorm = batchnorm, activation = act, degree = degree)
+                model = KAN(layer_sizes = layer_sizes, output_size = num_classes, dropout = dropout, init = init, batchnorm = batchnorm, activation = act, degree = degree)
                 
                 model = model.to(device)
                 optimizer = optim.AdamW(model.parameters(), lr=lr) 
@@ -63,7 +75,7 @@ if __name__ == '__main__':
                     assert next(model.parameters()).is_cuda
   
                     
-                trainer = trainer_(model = model, optimizer = optimizer, num_classes = 10, batchsize = batchsize)
+                trainer = trainer_(model = model, optimizer = optimizer, num_classes = num_classes, batchsize = batchsize)
                 logs = list()
             
                 experiment_name += "_batchsize_" + str(batchsize) + "_lr_" + str(lr) + "_epochs_" + str(epochs) + "_parameters_" + \
@@ -74,7 +86,7 @@ if __name__ == '__main__':
                     for batch_idx, (data, target) in enumerate(train_loader):
 
                         data = data.view(batchsize, -1)
-                        
+                        target = target.long().squeeze()
                         trainer.step(data.view(batchsize, -1).to(device), target.to(device))
                         try:
                             trainer.tune_output(data.view(batchsize, -1).to(device), target.to(device))

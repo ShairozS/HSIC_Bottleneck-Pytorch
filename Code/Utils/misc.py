@@ -18,38 +18,75 @@ def get_filename(args):
             filename += "_Latinb{}".format(args.Latinb_lambda)
     return filename
 
-def show_result(model, train_loader, test_loader, epoch, logs, device):
+def show_result(model, train_loader, test_loader, epoch, logs, device, log_ece = 0):
     model.model.eval()
     with torch.no_grad():
         counts, correct, counts2, correct2 = 0, 0, 0, 0        
         
+        import uncertainty_metrics.numpy as um
+
+        ece = 0
+        
         for batch_idx, (data, target) in enumerate(train_loader): 
+            
             #if len(data.shape) > 3: # Channel dimension exists
             #    data = torch.mean(data, axis = 1).squeeze()
             target = target.squeeze()
             output = model.model.forward(data.view(data.size(0), -1).to(device))[0].cpu()
             pred = output.argmax(dim=1, keepdim=True).cpu()
+
+            ## Calculate accuracy
+            target = target.type(torch.LongTensor)
             cor = (pred[:,0] == target).float().sum()
+
+            ## Calculate calibration
+            output_probs = torch.softmax(output, dim = 1)
+            prob,_ = output_probs.max(dim=1, keepdim=True)
+            prob = [x.item() for x in prob[:, 0]]
+            targ = [t.item() for t in target]
+            b_ece = um.ece(target, output_probs, num_bins=30)
             if cor > len(pred):
                 print("Warning, for batch ", batch_idx)
                 print("Correct value exceeds count, skipping...")
                 pdb.set_trace()
                 continue
             correct += cor
+            ece += b_ece
             counts += len(pred)
             
+        train_ece = ece / (batch_idx + 1)
+        ece2 = 0
         
         for batch_idx, (data, target) in enumerate(test_loader): 
+
             target = target.squeeze()
             output = model.model.forward(data.view(data.size(0), -1).to(device))[0].cpu()
             pred = output.argmax(dim=1, keepdim=True).cpu()
-            correct2 += (pred[:,0] == target).float().sum()
-            counts2 += len(pred)
             
+            ## Calculate accuracy
+            target = target.type(torch.LongTensor)
+            cor = (pred[:,0] == target).float().sum()
+            
+            ## Calculate calibration
+            output_probs = torch.softmax(output, dim = 1)
+            prob,_ = output_probs.max(dim=1, keepdim=True)
+            prob = [x.item() for x in prob[:, 0]]
+            targ = [t.item() for t in target]
+            b_ece = um.ece(target, output_probs, num_bins=30)
+            correct2 += (pred[:,0] == target).float().sum()
+            ece2 += b_ece
+            counts2 += len(pred)
+
         train_acc = correct/counts
         test_acc = correct2/counts2
-        print("EPOCH {}. \t Training  ACC: {:.4f}. \t Testing ACC: {:.4f}".format(epoch, train_acc, test_acc))
-        logs.append([epoch, train_acc.numpy(), test_acc.numpy()])
+        
+        test_ece = ece2 / (batch_idx + 1)
+        print(" EPOCH {}. \n Training ACC: {:.4f} | Testing ACC: {:.4f} \n Training ECE: {:.4f} | Testing ECE: {:.4f}".format(epoch, train_acc, test_acc, train_ece, test_ece))
+        
+        if log_ece:
+            logs.append([epoch, train_acc.numpy(), test_acc.numpy(), train_ece, test_ece])
+        else:
+            logs.append([epoch, train_acc.numpy(), test_acc.numpy()])
 
 
 
